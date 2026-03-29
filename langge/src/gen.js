@@ -1,71 +1,49 @@
-// gen.js - Phan trang danh sach truyen
-// Input = URL day du toi API get_discover (truyen tu home.js)
-load("utils.js");
+// gen.js - Danh sach truyen theo the loai
+// Input = URL day du, page = trang
+load("config.js");
+load("function.js");
+
 function execute(input, page) {
     if (!page) page = "1";
+    var api = input + "&page=" + page;
+    var response = fetch(api);
 
-    // Ghép thêm tham số page vào URL có sẵn
-    var urlFetch = input + "&page=" + page;
+    if (response.ok) {
+        var json = response.json();
+        var storyList = [];
 
-    var res = fetch(urlFetch, {
-        headers: {
-            "Accept": "application/json",
-            "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36"
+        if (json.data) {
+            var items = json.data;
+            if (!Array.isArray(items) && items.list) items = items.list;
+
+            for (var i = 0; i < items.length; i++) {
+                var item = items[i];
+                if (!item.book_id) continue;
+
+                var name = item.book_name || item.title || item.name || "";
+                // Link = path only, KHONG co host (giong ban suu tam)
+                var link = "/online_detail?book_id=" + item.book_id + "&source=" + item.source + "&tab=" + item.tab;
+                link = encodeURIComponent(link);
+                var cover = replaceCover(item.thumb_url || item.cover || "");
+                var description = item.author || item.auth || "";
+
+                storyList.push({
+                    name: name,
+                    link: link,
+                    cover: cover,
+                    description: description,
+                    host: BASE_URL
+                });
+            }
         }
-    });
 
-    if (!res.ok) {
-        return Response.error("Lỗi lấy danh sách truyện (HTTP " + res.status + ")");
-    }
-
-    var json = res.json();
-    var bookList = null;
-    if (json && json.data) {
-        if (Array.isArray(json.data)) {
-            bookList = json.data;
-        } else if (json.data.list) {
-            bookList = json.data.list;
+        var next = null;
+        if (storyList.length > 0) {
+            next = (parseInt(page) + 1).toString();
         }
+
+        return Response.success(storyList, next);
     }
 
-    if (!bookList || bookList.length === 0) {
-        if (parseInt(page) > 1) return Response.success([]);
-        return Response.error("Không tìm thấy truyện nào.");
-    }
-
-    // Lay source tu URL de truyen sang detail.js
-    var sourceMatch = input.match(/[?&]source=([^&]+)/);
-    var source = sourceMatch ? decodeURIComponent(sourceMatch[1]) : "推荐";
-
-    var novels = [];
-    for (var i = 0; i < bookList.length; i++) {
-        var item = bookList[i];
-
-        // Link ao de truyen book_id va source sang detail.js / toc.js
-        // Dung source tu item (co the la "svip_QQ阅读" hoac "番茄" v.v.)
-        var itemSource = item.source || source;
-        var itemTab = item.tab || "\u5c0f\u8bf4";
-
-        // Bo qua item khong co book_id hop le
-        if (!item.book_id) continue;
-
-        var fakeLink = "https://api.langge.cf/online_detail?book_id=" + encodeURIComponent(item.book_id)
-                       + "&source=" + encodeURIComponent(itemSource)
-                       + "&tab=" + encodeURIComponent(itemTab);
-
-        var desc = item.author || item.auth || "";
-        if (item.state_str) desc = desc + " | " + item.state_str;
-        if (item.category) desc = desc + " | " + item.category;
-
-        novels.push({
-            name: item.book_name || item.title || item.name || "Không có tên",
-            link: fakeLink,
-            cover: replaceCover(item.thumb_url || item.cover || ""),
-            description: desc,
-            host: "https://api.langge.cf"
-        });
-    }
-
-    var next = novels.length > 0 ? String(parseInt(page) + 1) : null;
-    return Response.success(novels, next);
+    return Response.error("Không thể tải danh sách truyện.");
 }

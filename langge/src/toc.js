@@ -1,69 +1,42 @@
-// toc.js - Lay muc luc (danh sach chuong) cua truyen
-// URL dang: https://api.langge.cf/online_detail?book_id=...&source=...&tab=...
-function getParam(url, name) {
-    var match = url.match(new RegExp("[?&]" + name + "=([^&]+)"));
-    return match ? decodeURIComponent(match[1]) : "";
-}
+// toc.js - Muc luc (danh sach chuong)
+load("config.js");
+load("function.js");
 
-function execute(url) {
-    url = decodeURIComponent(url);
-    var bookId = getParam(url, "book_id");
-    var source = getParam(url, "source") || "推荐";
-    var tab    = getParam(url, "tab")    || "小说";
+function execute(input) {
+    var book_id = getParam(input, "book_id");
+    var source = getParam(input, "source");
+    var tab = getParam(input, "tab");
 
-    if (!bookId) return Response.error("Khong tim thay book_id");
+    var api = BASE_URL + "/catalog?"
+        + "book_id=" + book_id
+        + "&source=" + source
+        + "&tab=" + tab;
+    var response = fetch(api);
 
-    // Goi API catalog
-    var apiUrl = "https://api.langge.cf/catalog?book_id=" + encodeURIComponent(bookId)
-                 + "&source=" + encodeURIComponent(source)
-                 + "&tab="    + encodeURIComponent(tab);
+    if (response.ok) {
+        var json = response.json();
+        var chapList = [];
 
-    var res = fetch(apiUrl, {
-        headers: {
-            "Accept": "application/json",
-            "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36"
+        if (json.data) {
+            var items = json.data;
+            for (var i = 0; i < items.length; i++) {
+                var item = items[i];
+                var name = item.title || item.name || ("Chuong " + (i + 1));
+                // Link = path only, KHONG co host (giong ban suu tam)
+                var link = "/online_reader?book_id=" + book_id
+                    + "&source=" + item.source
+                    + "&tab=" + item.tab
+                    + "&item_id=" + item.item_id;
+                chapList.push({
+                    name: name,
+                    url: link,
+                    host: BASE_URL
+                });
+            }
         }
-    });
 
-    if (!res.ok) {
-        return Response.error("Loi lay muc luc (HTTP " + res.status + ")");
+        return Response.success(chapList);
     }
 
-    var json = res.json();
-
-    // API co the tra ve json.data la mang chuong
-    var chapList = null;
-    if (json && json.data) {
-        if (Array.isArray(json.data)) {
-            chapList = json.data;
-        } else if (json.data.list) {
-            chapList = json.data.list;
-        } else if (json.data.chapters) {
-            chapList = json.data.chapters;
-        }
-    }
-
-    if (!chapList || chapList.length === 0) {
-        return Response.error("Khong tim thay muc luc chuong");
-    }
-
-    var toc = [];
-    for (var i = 0; i < chapList.length; i++) {
-        var chap = chapList[i];
-        // Tao URL ao cho chap.js: dung source va tab tu item (giong plugin_2)
-        var chapSource = chap.source || source;
-        var chapTab    = chap.tab    || tab;
-        var chapUrl = "https://api.langge.cf/online_reader?book_id=" + encodeURIComponent(bookId)
-                      + "&source=" + encodeURIComponent(chapSource)
-                      + "&tab="    + encodeURIComponent(chapTab)
-                      + "&item_id=" + encodeURIComponent(chap.item_id || chap.id || "");
-
-        toc.push({
-            name: chap.title || chap.name || ("Chuong " + (i + 1)),
-            url: chapUrl,
-            host: "https://api.langge.cf"
-        });
-    }
-
-    return Response.success(toc);
+    return Response.error("Không thể tải danh sách chương.");
 }
