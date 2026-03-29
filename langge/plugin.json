@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "name": "Đại Huy Lang",
+    "author": "NamMoc",
+    "version": 1.5,
+    "source": "https://api.langge.cf/online_search",
+    "regexp": "api\\.langge\\.cf/.*",
+    "description": "Tổng kho truyện TQ: Fanqie, Qidian, QQ, Đỉnh Điểm...",
+    "locale": "zh_CN",
+    "language": "javascript",
+    "type": "chinese_novel"
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "detail": "detail.js",
+    "search": "search.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}
