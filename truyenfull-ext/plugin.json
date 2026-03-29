@@ -1,11 +1,11 @@
 {
   "metadata": {
-    "name": "TruyenFull",
-    "author": "NamMoc",
+    "name": "Truyện Full",
+    "author": "NamMoc0",
     "version": 1,
     "source": "https://truyenfull.vision",
     "regexp": "truyenfull\\.vision/[^/]+/?$",
-    "description": "Đọc truyện chữ trên TruyenFull.vision - Kho truyện dịch lớn nhất Việt Nam",
+    "description": "Đọc truyện chữ trên Truyện Full",
     "locale": "vi_VN",
     "language": "javascript",
     "type": "novel"
