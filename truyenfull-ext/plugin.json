@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "Đại Huy Lang",
-    "author": "B",
+    "author": "NamMoc",
     "version": 1,
     "source": "https://api.langge.cf/online_search",
     "regexp": "api\\.langge\\.cf/.*",
