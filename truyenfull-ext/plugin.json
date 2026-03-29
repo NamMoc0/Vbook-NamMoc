@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "name": "TruyenFull",
+    "author": "B",
+    "version": 1,
+    "source": "https://truyenfull.vision",
+    "regexp": "truyenfull\\.vision/[^/]+/?$",
+    "description": "Đọc truyện chữ trên TruyenFull.vision - Kho truyện dịch lớn nhất Việt Nam",
+    "locale": "vi_VN",
+    "language": "javascript",
+    "type": "novel"
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "detail": "detail.js",
+    "search": "search.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}
