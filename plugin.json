@@ -1,21 +1,19 @@
 {
   "metadata": {
-    "name": "TruyenFull",
-    "author": "NamMoc",
-    "version": 1,
-    "source": "https://truyenfull.vision",
-    "regexp": "truyenfull\\.vision/[^/]+/?$",
-    "description": "Đọc truyện chữ trên TruyenFull.vision - Kho truyện dịch lớn nhất Việt Nam",
-    "locale": "vi_VN",
-    "language": "javascript",
-    "type": "novel"
+    "author": "NamMoc0",
+    "description": "Danh sách extension VBook"
   },
-  "script": {
-    "home": "src/home.js",
-    "genre": "src/genre.js",
-    "detail": "src/detail.js",
-    "search": "src/search.js",
-    "toc": "src/toc.js",
-    "chap": "src/chap.js"
-  }
+  "data": [
+    {
+      "name": "Truyện Full",
+      "author": "NamMoc0",
+      "path": "https://raw.githubusercontent.com/NamMoc0/Vbook-NamMoc/main/truyenfull-ext/plugin.zip",
+      "version": 1,
+      "source": "https://truyenfull.vision",
+      "icon": "https://raw.githubusercontent.com/NamMoc0/Vbook-NamMoc/main/truyenfull-ext/icon.png",
+      "description": "Đọc truyện trên trang Truyện Full",
+      "type": "novel",
+      "locale": "vi_VN"
+    }
+  ]
 }
