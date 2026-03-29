@@ -1,14 +1,56 @@
-// home.js - Lựa chọn nguồn sách lớn (Platform)
-// Vì vBook không hỗ trợ tab lồng nhau, ta sẽ kết hợp Nguồn + Thể loại
-// Từng tab ở đây sẽ trực tiếp gọi gen.js để tải mảng sách
+// home.js - Trang chủ TruyenFull
+// Trả về danh sách các tab: Hot, Mới, Hoàn thành, Tiên Hiệp, Ngôn Tình
 function execute() {
     return Response.success([
-        { title: "Cà Chua (Nam Sinh)", input: JSON.stringify({source: "番茄", bdtype: "1", is_special: true}), script: "gen.js" },
-        { title: "Cà Chua (Nữ Sinh)", input: JSON.stringify({source: "番茄", bdtype: "2", is_special: true}), script: "gen.js" },
-        { title: "Khởi Điểm (Nam)", input: JSON.stringify({source: "起点", bdtype: "1", is_special: true}), script: "gen.js" },
-        { title: "Khởi Điểm (Nữ)", input: JSON.stringify({source: "起点", bdtype: "2", is_special: true}), script: "gen.js" },
-        { title: "QQ Đọc (Nam)", input: JSON.stringify({source: "QQ阅读", bdtype: "1", is_special: true}), script: "gen.js" },
-        { title: "Đỉnh Điểm", input: JSON.stringify({source: "顶点", bdtype: "1", is_special: true}), script: "gen.js" },
-        { title: "Bảy Mèo", input: JSON.stringify({source: "七猫", bdtype: "1", is_special: true}), script: "gen.js" }
+        {
+            title: "Truyện Hot",
+            input: "https://truyenfull.vision/danh-sach/truyen-hot/",
+            script: "genre.js"
+        },
+        {
+            title: "Mới Cập Nhật",
+            input: "https://truyenfull.vision/danh-sach/truyen-moi/",
+            script: "genre.js"
+        },
+        {
+            title: "Đã Hoàn Thành",
+            input: "https://truyenfull.vision/danh-sach/truyen-full/",
+            script: "genre.js"
+        },
+        {
+            title: "Tiên Hiệp",
+            input: "https://truyenfull.vision/the-loai/tien-hiep/",
+            script: "genre.js"
+        },
+        {
+            title: "Kiếm Hiệp",
+            input: "https://truyenfull.vision/the-loai/kiem-hiep/",
+            script: "genre.js"
+        },
+        {
+            title: "Ngôn Tình",
+            input: "https://truyenfull.vision/the-loai/ngon-tinh/",
+            script: "genre.js"
+        },
+        {
+            title: "Đam Mỹ",
+            input: "https://truyenfull.vision/the-loai/dam-my/",
+            script: "genre.js"
+        },
+        {
+            title: "Huyền Huyễn",
+            input: "https://truyenfull.vision/the-loai/huyen-huyen/",
+            script: "genre.js"
+        },
+        {
+            title: "Xuyên Không",
+            input: "https://truyenfull.vision/the-loai/xuyen-khong/",
+            script: "genre.js"
+        },
+        {
+            title: "Trọng Sinh",
+            input: "https://truyenfull.vision/the-loai/trong-sinh/",
+            script: "genre.js"
+        }
     ]);
 }

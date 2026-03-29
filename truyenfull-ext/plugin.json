@@ -1,21 +1,21 @@
 {
   "metadata": {
-    "name": "Đại Huy Lang",
+    "name": "TruyenFull",
     "author": "NamMoc",
     "version": 1,
-    "source": "https://api.langge.cf/online_search",
-    "regexp": "api\\.langge\\.cf/.*",
-    "description": "Tổng kho truyện TQ: Fanqie, Qidian, QQ, Đỉnh Điểm...",
-    "locale": "zh_CN",
+    "source": "https://truyenfull.vision",
+    "regexp": "truyenfull\\.vision/[^/]+/?$",
+    "description": "Đọc truyện chữ trên TruyenFull.vision - Kho truyện dịch lớn nhất Việt Nam",
+    "locale": "vi_VN",
     "language": "javascript",
-    "type": "chinese_novel"
+    "type": "novel"
   },
   "script": {
-    "home": "home.js",
-    "genre": "genre.js",
-    "detail": "detail.js",
-    "search": "search.js",
-    "toc": "toc.js",
-    "chap": "chap.js"
+    "home": "src/home.js",
+    "genre": "src/genre.js",
+    "detail": "src/detail.js",
+    "search": "src/search.js",
+    "toc": "src/toc.js",
+    "chap": "src/chap.js"
   }
 }
