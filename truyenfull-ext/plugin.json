@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "TruyenFull",
-    "author": "B",
+    "author": "NamMoc",
     "version": 1,
     "source": "https://truyenfull.vision",
     "regexp": "truyenfull\\.vision/[^/]+/?$",
@@ -11,11 +11,11 @@
     "type": "novel"
   },
   "script": {
-    "home": "home.js",
-    "genre": "genre.js",
-    "detail": "detail.js",
-    "search": "search.js",
-    "toc": "toc.js",
-    "chap": "chap.js"
+    "home": "src/home.js",
+    "genre": "src/genre.js",
+    "detail": "src/detail.js",
+    "search": "src/search.js",
+    "toc": "src/toc.js",
+    "chap": "src/chap.js"
   }
 }
