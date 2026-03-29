@@ -1,94 +1,72 @@
-// toc.js - Mục lục (danh sách chương) trên TruyenFull
-// Input: url (string URL trang detail của truyện)
-// Output: [{name, url, host}]
-// NOTE: TruyenFull phân trang mục lục theo dạng /truyen-slug/trang-N/#list-chapter
-// Mỗi trang có 50 chương. Script này tải toàn bộ tất cả các trang mục lục.
+// toc.js - Lay muc luc (danh sach chuong) cua truyen
+// URL dang: https://api.langge.cf/book_render?id={base64}&source={source}
 function execute(url) {
-    // App tự động bỏ / cuối
-    if (url.charAt(url.length - 1) !== '/') url = url + '/';
+    // Parse book_id va source tu URL ao
+    var bookId = "";
+    var source = "";
 
-    Console.log('[INFO] toc.js - Bắt đầu tải mục lục: ' + url);
+    try {
+        var queryStr = url.split("?")[1] || "";
+        var params = queryStr.split("&");
+        for (var i = 0; i < params.length; i++) {
+            var kv = params[i].split("=");
+            if (kv[0] === "id") bookId = decodeURIComponent(kv[1] || "");
+            if (kv[0] === "source") source = decodeURIComponent(kv[1] || "");
+        }
+    } catch (e) {
+        return Response.error("Loi parse URL: " + e);
+    }
 
-    var tatCaChuong = [];
+    if (!bookId) return Response.error("Khong tim thay book_id");
+    if (!source) source = "推荐";
 
-    // Tải trang đầu tiên để lấy tổng số trang mục lục
-    var response = fetch(url, {
+    // Goi API catalog
+    var apiUrl = "https://api.langge.cf/catalog?book_id=" + encodeURIComponent(bookId)
+                 + "&source=" + encodeURIComponent(source)
+                 + "&tab=" + encodeURIComponent("小说");
+
+    var res = fetch(apiUrl, {
         headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            "Accept": "application/json",
+            "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36"
         }
     });
 
-    if (!response.ok) {
-        Console.log('[ERROR] toc.js - HTTP ' + response.status);
-        return Response.error('Không thể tải mục lục (HTTP ' + response.status + ')');
+    if (!res.ok) {
+        return Response.error("Loi lay muc luc (HTTP " + res.status + ")");
     }
 
-    var doc = response.html();
+    var json = res.json();
 
-    // Lấy tổng số trang mục lục từ nút "Cuối" trong pagination
-    var soTrang = 1;
-    var cuoiEl = doc.select('.pagination a[title*="Cuối"], .pagination a:contains(\"»\")').last();
-    if (cuoiEl != null) {
-        var hrefCuoi = cuoiEl.attr('href');
-        if (hrefCuoi) {
-            // Pattern: /truyen-slug/trang-33/#list-chapter
-            var match = hrefCuoi.match(/\/trang-(\d+)\//);
-            if (match) {
-                soTrang = parseInt(match[1]);
-            }
+    // API co the tra ve json.data la mang chuong
+    var chapList = null;
+    if (json && json.data) {
+        if (Array.isArray(json.data)) {
+            chapList = json.data;
+        } else if (json.data.list) {
+            chapList = json.data.list;
+        } else if (json.data.chapters) {
+            chapList = json.data.chapters;
         }
     }
 
-    Console.log('[INFO] toc.js - Tổng số trang mục lục: ' + soTrang);
+    if (!chapList || chapList.length === 0) {
+        return Response.error("Khong tim thay muc luc chuong");
+    }
 
-    // Hàm lấy danh sách chương từ một trang
-    function layChuongTuTrang(docTrang) {
-        var chuongEls = docTrang.select('ul.list-chapter li a');
-        chuongEls.forEach(function(el) {
-            var tenChuong = el.text().trim();
-            var urlChuong = el.attr('href');
-            if (!tenChuong || !urlChuong) return;
-            if (urlChuong.indexOf('//') === 0) urlChuong = 'https:' + urlChuong;
-            if (urlChuong.indexOf('http') !== 0) urlChuong = 'https://truyenfull.vision' + urlChuong;
-            tatCaChuong.push({
-                name: tenChuong,
-                url: urlChuong,
-                host: 'https://truyenfull.vision'
-            });
+    var toc = [];
+    for (var i = 0; i < chapList.length; i++) {
+        var chap = chapList[i];
+        // Tao URL ao cho chap.js: chua item_id va source
+        var chapUrl = "https://api.langge.cf/chap_render?item_id=" + encodeURIComponent(chap.item_id || chap.id || "")
+                      + "&source=" + encodeURIComponent(source);
+
+        toc.push({
+            name: chap.title || chap.name || ("Chuong " + (i + 1)),
+            url: chapUrl,
+            host: "https://api.langge.cf"
         });
     }
 
-    // Lấy chương từ trang 1 (đã tải rồi)
-    layChuongTuTrang(doc);
-    Console.log('[INFO] toc.js - Trang 1: ' + tatCaChuong.length + ' chương');
-
-    // Tải các trang tiếp theo nếu có
-    for (var i = 2; i <= soTrang; i++) {
-        var urlTrang = url + 'trang-' + i + '/#list-chapter';
-        // Tránh lấy phần fragment trong URL thực tế
-        var urlFetch = url + 'trang-' + i + '/';
-
-        Console.log('[INFO] toc.js - Tải trang mục lục ' + i + '/' + soTrang);
-        var resp = fetch(urlFetch, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-        });
-
-        if (!resp.ok) {
-            Console.log('[WARN] toc.js - Bỏ qua trang ' + i + ' vì HTTP ' + resp.status);
-            continue;
-        }
-
-        layChuongTuTrang(resp.html());
-        Console.log('[INFO] toc.js - Đã tải xong trang ' + i + ', tổng: ' + tatCaChuong.length + ' chương');
-    }
-
-    if (tatCaChuong.length === 0) {
-        Console.log('[ERROR] toc.js - Không tìm thấy chương nào');
-        return Response.error('Không tìm thấy chương nào trong mục lục');
-    }
-
-    Console.log('[INFO] toc.js - Hoàn thành! Tổng cộng ' + tatCaChuong.length + ' chương');
-    return Response.success(tatCaChuong);
+    return Response.success(toc);
 }

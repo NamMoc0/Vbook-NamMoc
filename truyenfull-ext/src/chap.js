@@ -1,39 +1,74 @@
-// chap.js - Tải nội dung chương trên TruyenFull
-// Input: url (string URL chương)
-// Output: HTML nội dung chương
+// chap.js - Lay noi dung chuong truyen
+// URL dang: https://api.langge.cf/chap_render?item_id={id}&source={source}
 function execute(url) {
-    Console.log('[INFO] chap.js - Bắt đầu tải chương: ' + url);
+    // Parse item_id va source tu URL ao
+    var itemId = "";
+    var source = "";
 
-    var response = fetch(url, {
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    try {
+        var queryStr = url.split("?")[1] || "";
+        var params = queryStr.split("&");
+        for (var i = 0; i < params.length; i++) {
+            var kv = params[i].split("=");
+            if (kv[0] === "item_id") itemId = decodeURIComponent(kv[1] || "");
+            if (kv[0] === "source") source = decodeURIComponent(kv[1] || "");
         }
+    } catch (e) {
+        return Response.error("Loi parse URL chuong: " + e);
+    }
+
+    if (!itemId) return Response.error("Khong tim thay item_id chuong");
+    if (!source) source = "推荐";
+
+    // Goi API content bang POST
+    var apiUrl = "https://api.langge.cf/content?review=1";
+    var bodyData = JSON.stringify({
+        item_id: itemId,
+        source: source,
+        tab: "小说",
+        version: "4.11.5.1"
     });
 
-    if (!response.ok) {
-        Console.log('[ERROR] chap.js - HTTP ' + response.status);
-        return Response.error('Không thể tải nội dung chương (HTTP ' + response.status + ')');
+    var res = fetch(apiUrl, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36"
+        },
+        body: bodyData
+    });
+
+    if (!res.ok) {
+        return Response.error("Loi lay noi dung chuong (HTTP " + res.status + ")");
     }
 
-    var doc = response.html();
-    var contentEl = doc.select('div.chapter-c').first();
+    var json = res.json();
 
-    if (contentEl == null) {
-        Console.log('[ERROR] chap.js - Không tìm thấy nội dung chương (class .chapter-c)');
-        return Response.error('Lỗi phân tích: Không tìm thấy nội dung');
+    // Lay noi dung text tu response
+    var content = "";
+    if (json && json.data) {
+        if (typeof json.data === "string") {
+            content = json.data;
+        } else if (json.data.content) {
+            content = json.data.content;
+        } else if (json.data.text) {
+            content = json.data.text;
+        }
     }
 
-    // Làm sạch HTML: loại bỏ script, iframe
-    contentEl.select('script, iframe').remove();
+    if (!content || content.trim() === "") {
+        return Response.error("Noi dung chuong rong. Co the can dang nhap.");
+    }
 
-    var noiDung = contentEl.html();
-    
-    // Ở TruyenFull đôi khi có các text rác do quảng cáo, hoặc credit của website
-    // Có thể thêm filter replace ở đây nếu cần, hiện tại lấy raw HTML trong div.chapter-c là khá ổn.
-    
-    // Một số truyện có cấu trúc text bị dính, thêm format nếu cần:
-    // noiDung = noiDung.replace(/<br\s*\/?>/gi, '<br><br>'); 
+    // Chuyen newline thanh the HTML <br> de hien thi tot tren vBook
+    // Loai bo cac ky tu thua
+    content = content.replace(/\r\n/g, "\n");
+    content = content.replace(/\n{3,}/g, "\n\n");
+    content = content.replace(/\n/g, "<br>");
 
-    Console.log('[INFO] chap.js - Đã tải xong nội dung (' + noiDung.length + ' ký tự)');
-    return Response.success(noiDung);
+    // Boc trong the <p> de dinh dang dep hon
+    content = "<div style='line-height:1.8;font-size:16px;'>" + content + "</div>";
+
+    return Response.success(content);
 }
