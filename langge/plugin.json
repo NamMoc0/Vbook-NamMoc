@@ -2,7 +2,7 @@
   "metadata": {
     "name": "Đại Huy Lang",
     "author": "NamMoc",
-    "version": 1.6,
+    "version": 3,
     "source": "https://api.langge.cf/online_search",
     "regexp": "api\\.langge\\.cf/.*",
     "description": "Tổng kho truyện TQ: Fanqie, Qidian, QQ, Đỉnh Điểm...",
