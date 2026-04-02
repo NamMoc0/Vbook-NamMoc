@@ -1,19 +1,18 @@
-// search.js - Tìm kiếm truyện trên TruyenFull
-// Input: key (string từ khóa), page (string số trang)
-// Output: [{name, link, cover, description, host}], nextPage
+// search.js - Tim kiem truyen tren TruyenFull
+var HOST = 'https://truyenfull.vision';
+
 function execute(key, page) {
     if (!page) page = "1";
     var trangHienTai = parseInt(page);
     if (isNaN(trangHienTai) || trangHienTai < 1) trangHienTai = 1;
 
-    // Encode từ khóa tìm kiếm
     var tuKhoa = encodeURIComponent(key);
-    var url = 'https://truyenfull.vision/tim-kiem/?tukhoa=' + tuKhoa;
+    var url = HOST + '/tim-kiem/?tukhoa=' + tuKhoa;
     if (trangHienTai > 1) {
-        url = 'https://truyenfull.vision/tim-kiem/trang-' + trangHienTai + '/?tukhoa=' + tuKhoa;
+        url = HOST + '/tim-kiem/trang-' + trangHienTai + '/?tukhoa=' + tuKhoa;
     }
 
-    Console.log('[INFO] search.js - Tìm kiếm: "' + key + '" trang ' + trangHienTai);
+    Console.log('[INFO] search.js - Tim kiem: "' + key + '" trang ' + trangHienTai);
 
     var response = fetch(url, {
         headers: {
@@ -28,26 +27,34 @@ function execute(key, page) {
 
     var doc = response.html();
 
-    // Phát hiện nếu bị redirect về trang detail (tìm thấy khớp chính xác 1 truyện)
+    // Phat hien redirect ve trang detail (tim thay khop chinh xac 1 truyen)
     var h3Title = doc.select('h3.title').first();
     if (h3Title != null) {
-        Console.log('[INFO] search.js - Redirect về trang chi tiết, lấy 1 kết quả');
+        Console.log('[INFO] search.js - Redirect ve trang chi tiet');
         var tenTruyen = h3Title.text().trim();
-        var coverEl = doc.select('div.books img').first();
-        var cover = coverEl != null ? coverEl.attr('src') : '';
+        var coverEl = doc.select('div.books img, div.books .lazyimg').first();
+        var cover = '';
+        if (coverEl != null) {
+            cover = coverEl.attr('data-image');
+            if (!cover) cover = coverEl.attr('src');
+        }
         if (cover && cover.indexOf('//') === 0) cover = 'https:' + cover;
+
+        // Lay path tu current URL
+        var detailLink = url.replace(HOST, '');
+
         return Response.success([{
             name: tenTruyen,
-            link: url,
+            link: detailLink,
             cover: cover,
             description: 'Kết quả khớp chính xác',
-            host: 'https://truyenfull.vision'
+            host: HOST
         }], null);
     }
 
     var danhSach = [];
     var cacItem = doc.select('.list-truyen .row');
-    Console.log('[INFO] search.js - Kết quả: ' + cacItem.size() + ' truyện');
+    Console.log('[INFO] search.js - Ket qua: ' + cacItem.size() + ' truyen');
 
     for (var i = 0; i < cacItem.size(); i++) {
         var item = cacItem.get(i);
@@ -57,8 +64,14 @@ function execute(key, page) {
             var ten = tenEl.text().trim();
             var link = tenEl.attr('href');
             if (!link) continue;
-            if (link.indexOf('//') === 0) link = 'https:' + link;
-            if (link.indexOf('http') !== 0) link = 'https://truyenfull.vision' + link;
+
+            // Chuan hoa link thanh PATH-ONLY
+            if (link.indexOf('https://truyenfull.vision') === 0) {
+                link = link.substring('https://truyenfull.vision'.length);
+            } else if (link.indexOf('//truyenfull.vision') === 0) {
+                link = link.substring('//truyenfull.vision'.length);
+            }
+            if (link.charAt(0) !== '/') link = '/' + link;
 
             var cover = '';
             var imgEl = item.select('.lazyimg').first();
@@ -81,17 +94,17 @@ function execute(key, page) {
                 link: link,
                 cover: cover,
                 description: moTa,
-                host: 'https://truyenfull.vision'
+                host: HOST
             });
         } catch (e) {
-            Console.log('[WARN] search.js - Lỗi parse item: ' + e);
+            Console.log('[WARN] search.js - Loi parse item: ' + e);
         }
     }
 
-    // Kiểm tra trang tiếp
+    // Kiem tra trang tiep
     var trangTiep = null;
     if (danhSach.length > 0) {
-        var nextEl = doc.select('.pagination a[title*="Trang tiếp"], .pagination a:contains("Trang tiếp")').first();
+        var nextEl = doc.select('.pagination a[title*=\"Trang tiếp\"], .pagination a:contains(\"Trang tiếp\")').first();
         if (nextEl != null) {
             var href = nextEl.attr('href');
             if (href && href.indexOf('javascript') < 0) {
@@ -100,6 +113,6 @@ function execute(key, page) {
         }
     }
 
-    Console.log('[INFO] search.js - Trả về ' + danhSach.length + ' kết quả, trang tiếp: ' + trangTiep);
+    Console.log('[INFO] search.js - Tra ve ' + danhSach.length + ' ket qua, trang tiep: ' + trangTiep);
     return Response.success(danhSach, trangTiep);
 }

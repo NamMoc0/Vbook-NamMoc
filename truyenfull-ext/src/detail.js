@@ -1,11 +1,14 @@
-// detail.js - Chi tiết truyện trên TruyenFull
-// Input: url (string URL trang detail của truyện)
-// Output: {name, cover, host, author, description, detail, ongoing, genres, suggests}
-function execute(url) {
-    // App tự động bỏ / cuối, ta thêm lại
-    if (url.charAt(url.length - 1) !== '/') url = url + '/';
+// detail.js - Chi tiet truyen tren TruyenFull
+// Input: url (path hoac full URL trang detail)
+var HOST = 'https://truyenfull.vision';
 
-    Console.log('[INFO] detail.js - Đang tải: ' + url);
+function execute(url) {
+    // Dam bao co dau / cuoi
+    if (url.charAt(url.length - 1) !== '/') url = url + '/';
+    // Neu la path-only thi them host
+    if (url.indexOf('http') !== 0) url = HOST + url;
+
+    Console.log('[INFO] detail.js - Dang tai: ' + url);
 
     var response = fetch(url, {
         headers: {
@@ -20,7 +23,7 @@ function execute(url) {
 
     var doc = response.html();
 
-    // ---- Tiêu đề ----
+    // Tieu de
     var ten = '';
     var titleEl = doc.select('h3.title').first();
     if (titleEl != null) ten = titleEl.text().trim();
@@ -29,64 +32,60 @@ function execute(url) {
         if (titleEl != null) ten = titleEl.text().trim();
     }
 
-    // ---- Ảnh bìa ----
+    // Anh bia
     var cover = '';
-    var coverEl = doc.select('div.books img').first();
+    var coverEl = doc.select('div.books img, div.books .lazyimg').first();
     if (coverEl != null) {
-        cover = coverEl.attr('src');
-        if (!cover) cover = coverEl.attr('data-image');
+        cover = coverEl.attr('data-image');
+        if (!cover) cover = coverEl.attr('src');
     }
     if (cover && cover.indexOf('//') === 0) cover = 'https:' + cover;
-    if (cover && cover.indexOf('http') !== 0) cover = 'https://truyenfull.vision' + cover;
+    if (cover && cover.indexOf('http') !== 0) cover = HOST + cover;
 
-    // ---- Tác giả ----
+    // Tac gia
     var tacGia = '';
-    var tacGiaEl = doc.select('a[itemprop="author"]').first();
+    var tacGiaEl = doc.select('a[itemprop=\"author\"]').first();
     if (tacGiaEl != null) tacGia = tacGiaEl.text().trim();
     if (!tacGia) {
-        tacGiaEl = doc.select('.info a[href*="/tac-gia/"]').first();
+        tacGiaEl = doc.select('.info a[href*=\"/tac-gia/\"]').first();
         if (tacGiaEl != null) tacGia = tacGiaEl.text().trim();
     }
 
-    // ---- Thể loại ----
-    var theLoaiEls = doc.select('a[itemprop="genre"]');
+    // The loai (voi link = path-only)
+    var theLoaiEls = doc.select('a[itemprop=\"genre\"]');
     if (theLoaiEls.size() === 0) {
-        theLoaiEls = doc.select('.info a[href*="/the-loai/"]');
+        theLoaiEls = doc.select('.info a[href*=\"/the-loai/\"]');
     }
     var danhSachTheLoai = [];
     for (var i = 0; i < theLoaiEls.size(); i++) {
         var el = theLoaiEls.get(i);
         var tenTL = el.text().trim();
         var linkTL = el.attr('href');
-        if (!linkTL) continue;
+        if (!linkTL || !tenTL) continue;
+        // Chuan hoa thanh full URL cho input (vi genre.js can full URL de fetch)
         if (linkTL.indexOf('//') === 0) linkTL = 'https:' + linkTL;
-        if (linkTL.indexOf('http') !== 0) linkTL = 'https://truyenfull.vision' + linkTL;
-        if (tenTL) {
-            danhSachTheLoai.push({
-                title: tenTL,
-                input: linkTL,
-                script: 'genre.js'
-            });
-        }
+        if (linkTL.indexOf('http') !== 0) linkTL = HOST + linkTL;
+        danhSachTheLoai.push({
+            title: tenTL,
+            input: linkTL,
+            script: 'genre.js'
+        });
     }
 
-    // ---- Trạng thái ----
+    // Trang thai
     var trangThai = '';
     var trangThaiEl = doc.select('.info span.text-primary').first();
     if (trangThaiEl != null) trangThai = trangThaiEl.text().trim();
-
-    // Xác định ongoing
     var dangRa = true;
     var lower = trangThai.toLowerCase();
-    if (lower.indexOf('hoàn') >= 0 || lower.indexOf('full') >= 0 || lower.indexOf('completed') >= 0) {
+    if (lower.indexOf('hoàn') >= 0 || lower.indexOf('full') >= 0) {
         dangRa = false;
     }
 
-    // ---- Mô tả ----
+    // Mo ta
     var moTa = '';
     var moTaEl = doc.select('div.desc-text').first();
     if (moTaEl != null) {
-        // Xóa các nút "Hiện thêm" tránh lấy nhầm text
         moTaEl.select('a, button').remove();
         moTa = moTaEl.html();
     }
@@ -95,49 +94,33 @@ function execute(url) {
         if (moTaEl != null) moTa = moTaEl.html();
     }
 
-    // ---- Thông tin chi tiết ----
+    // Chi tiet
     var chiTiet = 'Tác giả: ' + (tacGia || 'Không rõ') + '<br>';
     chiTiet += 'Trạng thái: ' + (trangThai || 'Đang ra') + '<br>';
     if (danhSachTheLoai.length > 0) {
         var tenTLs = [];
-        danhSachTheLoai.forEach(function(tl) { tenTLs.push(tl.title); });
+        for (var j = 0; j < danhSachTheLoai.length; j++) {
+            tenTLs.push(danhSachTheLoai[j].title);
+        }
         chiTiet += 'Thể loại: ' + tenTLs.join(', ') + '<br>';
     }
 
-    // ---- Truyện cùng tác giả (Suggests) ----
+    // Goi y (truyen cung tac gia)
     var goiY = [];
-    var cungTacGiaEls = doc.select('.col-truyen-other .other-name a, .list-author a');
-    for (var i = 0; i < cungTacGiaEls.size(); i++) {
-        var el = cungTacGiaEls.get(i);
-        var tenGoiY = el.text().trim();
-        var linkGoiY = el.attr('href');
-        if (!tenGoiY || !linkGoiY) continue;
-        if (linkGoiY.indexOf('//') === 0) linkGoiY = 'https:' + linkGoiY;
-        if (linkGoiY.indexOf('http') !== 0) linkGoiY = 'https://truyenfull.vision' + linkGoiY;
-        if (goiY.length < 5) {
-            goiY.push({
-                title: tenGoiY,
-                input: linkGoiY,
-                script: 'detail.js'
-            });
-        }
-    }
-
-    // Nếu không có gợi ý, thử tìm theo tác giả
-    if (goiY.length === 0 && tacGia) {
+    if (tacGia) {
         goiY.push({
             title: 'Truyện của ' + tacGia,
-            input: 'https://truyenfull.vision/tac-gia/' + encodeURIComponent(tacGia.toLowerCase().replace(/\s+/g, '-')) + '/',
+            input: HOST + '/tac-gia/' + encodeURIComponent(tacGia.toLowerCase().replace(/\s+/g, '-')) + '/',
             script: 'genre.js'
         });
     }
 
-    Console.log('[INFO] detail.js - Tên: ' + ten + ', Tác giả: ' + tacGia + ', Ongoing: ' + dangRa);
+    Console.log('[INFO] detail.js - Ten: ' + ten + ', Tac gia: ' + tacGia);
 
     return Response.success({
         name: ten,
         cover: cover,
-        host: 'https://truyenfull.vision',
+        host: HOST,
         author: tacGia,
         description: moTa,
         detail: chiTiet,

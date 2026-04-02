@@ -1,17 +1,16 @@
-// toc.js - Mục lục (danh sách chương) trên TruyenFull
-// Input: url (string URL trang detail của truyện)
-// Output: [{name, url, host}]
-// NOTE: TruyenFull phân trang mục lục theo dạng /truyen-slug/trang-N/#list-chapter
-// Mỗi trang có 50 chương. Script này tải toàn bộ tất cả các trang mục lục.
-function execute(url) {
-    // App tự động bỏ / cuối
-    if (url.charAt(url.length - 1) !== '/') url = url + '/';
+// toc.js - Muc luc (danh sach chuong) tren TruyenFull
+// Input: url (path hoac full URL trang detail cua truyen)
+var HOST = 'https://truyenfull.vision';
 
-    Console.log('[INFO] toc.js - Bắt đầu tải mục lục: ' + url);
+function execute(url) {
+    if (url.charAt(url.length - 1) !== '/') url = url + '/';
+    // Neu la path-only thi them host
+    if (url.indexOf('http') !== 0) url = HOST + url;
+
+    Console.log('[INFO] toc.js - Bat dau tai muc luc: ' + url);
 
     var tatCaChuong = [];
 
-    // Tải trang đầu tiên để lấy tổng số trang mục lục
     var response = fetch(url, {
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -25,13 +24,12 @@ function execute(url) {
 
     var doc = response.html();
 
-    // Lấy tổng số trang mục lục từ nút "Cuối" trong pagination
+    // Lay tong so trang muc luc
     var soTrang = 1;
-    var cuoiEl = doc.select('.pagination a[title*="Cuối"], .pagination a:contains(\"»\")').last();
+    var cuoiEl = doc.select('.pagination a:contains(\"»\")').last();
     if (cuoiEl != null) {
         var hrefCuoi = cuoiEl.attr('href');
         if (hrefCuoi) {
-            // Pattern: /truyen-slug/trang-33/#list-chapter
             var match = hrefCuoi.match(/\/trang-(\d+)\//);
             if (match) {
                 soTrang = parseInt(match[1]);
@@ -39,9 +37,9 @@ function execute(url) {
         }
     }
 
-    Console.log('[INFO] toc.js - Tổng số trang mục lục: ' + soTrang);
+    Console.log('[INFO] toc.js - Tong so trang muc luc: ' + soTrang);
 
-    // Hàm lấy danh sách chương từ một trang
+    // Ham lay chuong tu mot trang
     function layChuongTuTrang(docTrang) {
         var chuongEls = docTrang.select('ul.list-chapter li a');
         for (var i = 0; i < chuongEls.size(); i++) {
@@ -49,27 +47,31 @@ function execute(url) {
             var tenChuong = el.text().trim();
             var urlChuong = el.attr('href');
             if (!tenChuong || !urlChuong) continue;
-            if (urlChuong.indexOf('//') === 0) urlChuong = 'https:' + urlChuong;
-            if (urlChuong.indexOf('http') !== 0) urlChuong = 'https://truyenfull.vision' + urlChuong;
+
+            // Chuan hoa thanh PATH-ONLY
+            if (urlChuong.indexOf('https://truyenfull.vision') === 0) {
+                urlChuong = urlChuong.substring('https://truyenfull.vision'.length);
+            } else if (urlChuong.indexOf('//truyenfull.vision') === 0) {
+                urlChuong = urlChuong.substring('//truyenfull.vision'.length);
+            }
+            if (urlChuong.charAt(0) !== '/') urlChuong = '/' + urlChuong;
+
             tatCaChuong.push({
                 name: tenChuong,
                 url: urlChuong,
-                host: 'https://truyenfull.vision'
+                host: HOST
             });
         }
     }
 
-    // Lấy chương từ trang 1 (đã tải rồi)
+    // Lay chuong tu trang 1
     layChuongTuTrang(doc);
-    Console.log('[INFO] toc.js - Trang 1: ' + tatCaChuong.length + ' chương');
+    Console.log('[INFO] toc.js - Trang 1: ' + tatCaChuong.length + ' chuong');
 
-    // Tải các trang tiếp theo nếu có
+    // Tai cac trang tiep theo
     for (var i = 2; i <= soTrang; i++) {
-        var urlTrang = url + 'trang-' + i + '/#list-chapter';
-        // Tránh lấy phần fragment trong URL thực tế
         var urlFetch = url + 'trang-' + i + '/';
-
-        Console.log('[INFO] toc.js - Tải trang mục lục ' + i + '/' + soTrang);
+        Console.log('[INFO] toc.js - Tai trang muc luc ' + i + '/' + soTrang);
         var resp = fetch(urlFetch, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -77,19 +79,19 @@ function execute(url) {
         });
 
         if (!resp.ok) {
-            Console.log('[WARN] toc.js - Bỏ qua trang ' + i + ' vì HTTP ' + resp.status);
+            Console.log('[WARN] toc.js - Bo qua trang ' + i + ' vi HTTP ' + resp.status);
             continue;
         }
 
         layChuongTuTrang(resp.html());
-        Console.log('[INFO] toc.js - Đã tải xong trang ' + i + ', tổng: ' + tatCaChuong.length + ' chương');
+        Console.log('[INFO] toc.js - Da tai xong trang ' + i + ', tong: ' + tatCaChuong.length + ' chuong');
     }
 
     if (tatCaChuong.length === 0) {
-        Console.log('[ERROR] toc.js - Không tìm thấy chương nào');
+        Console.log('[ERROR] toc.js - Khong tim thay chuong nao');
         return Response.error('Không tìm thấy chương nào trong mục lục');
     }
 
-    Console.log('[INFO] toc.js - Hoàn thành! Tổng cộng ' + tatCaChuong.length + ' chương');
+    Console.log('[INFO] toc.js - Hoan thanh! Tong cong ' + tatCaChuong.length + ' chuong');
     return Response.success(tatCaChuong);
 }

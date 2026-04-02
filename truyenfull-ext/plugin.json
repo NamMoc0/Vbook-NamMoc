@@ -2,7 +2,7 @@
   "metadata": {
     "name": "TruyenFull",
     "author": "NamMoc",
-    "version": 1,
+    "version": 4,
     "source": "https://truyenfull.vision",
     "regexp": "truyenfull\\.vision/[^/]+/?$",
     "description": "Đọc truyện chữ trên TruyenFull.vision - Kho truyện dịch lớn nhất Việt Nam",
@@ -12,7 +12,7 @@
   },
   "script": {
     "home": "home.js",
-    "genre": "genre.js",
+    "gen": "gen.js",
     "detail": "detail.js",
     "search": "search.js",
     "toc": "toc.js",

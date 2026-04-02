@@ -1,8 +1,12 @@
-// chap.js - Tải nội dung chương trên TruyenFull
-// Input: url (string URL chương)
-// Output: HTML nội dung chương
+// chap.js - Tai noi dung chuong tren TruyenFull
+// Input: url (path hoac full URL chuong)
+var HOST = 'https://truyenfull.vision';
+
 function execute(url) {
-    Console.log('[INFO] chap.js - Bắt đầu tải chương: ' + url);
+    // Neu la path-only thi them host
+    if (url.indexOf('http') !== 0) url = HOST + url;
+
+    Console.log('[INFO] chap.js - Bat dau tai chuong: ' + url);
 
     var response = fetch(url, {
         headers: {
@@ -19,21 +23,15 @@ function execute(url) {
     var contentEl = doc.select('div.chapter-c').first();
 
     if (contentEl == null) {
-        Console.log('[ERROR] chap.js - Không tìm thấy nội dung chương (class .chapter-c)');
+        Console.log('[ERROR] chap.js - Khong tim thay noi dung chuong (class .chapter-c)');
         return Response.error('Lỗi phân tích: Không tìm thấy nội dung');
     }
 
-    // Làm sạch HTML: loại bỏ script, iframe
-    contentEl.select('script, iframe').remove();
+    // Lam sach HTML: loai bo script, iframe, ads
+    contentEl.select('script, iframe, .ads, .ad-zone').remove();
 
     var noiDung = contentEl.html();
-    
-    // Ở TruyenFull đôi khi có các text rác do quảng cáo, hoặc credit của website
-    // Có thể thêm filter replace ở đây nếu cần, hiện tại lấy raw HTML trong div.chapter-c là khá ổn.
-    
-    // Một số truyện có cấu trúc text bị dính, thêm format nếu cần:
-    // noiDung = noiDung.replace(/<br\s*\/?>/gi, '<br><br>'); 
 
-    Console.log('[INFO] chap.js - Đã tải xong nội dung (' + noiDung.length + ' ký tự)');
+    Console.log('[INFO] chap.js - Da tai xong noi dung (' + noiDung.length + ' ky tu)');
     return Response.success(noiDung);
 }

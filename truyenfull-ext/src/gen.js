@@ -1,22 +1,21 @@
-// genre.js - Script đọc danh sách truyện từ một URL bất kỳ (Hot, Mới, Thể loại)
-// Input: url (string), page (string)
+// genre.js - Danh sach truyen theo the loai / tab
+// Input: url (full URL trang the loai), page (so trang)
 // Output: [{name, link, cover, description, host}], nextPage
+var HOST = 'https://truyenfull.vision';
+
 function execute(url, page) {
-    // Đảm bảo page là string số hợp lệ
     if (!page) page = "1";
     var trangHienTai = parseInt(page);
     if (isNaN(trangHienTai) || trangHienTai < 1) trangHienTai = 1;
 
-    // Xây dựng URL phân trang: /url/trang-N/ (trang 1 = URL gốc)
-    var urlTrang = url;
+    // Xu ly phan trang: /url/trang-N/
     if (url.charAt(url.length - 1) !== '/') url = url + '/';
+    var urlTrang = url;
     if (trangHienTai > 1) {
         urlTrang = url + 'trang-' + trangHienTai + '/';
-    } else {
-        urlTrang = url;
     }
 
-    Console.log('[INFO] genre.js - Đang tải: ' + urlTrang);
+    Console.log('[INFO] genre.js - Dang tai: ' + urlTrang);
 
     var response = fetch(urlTrang, {
         headers: {
@@ -32,25 +31,29 @@ function execute(url, page) {
     var doc = response.html();
     var danhSach = [];
 
-    // Lấy từng item truyện trong .list-truyen .row
     var cacItem = doc.select('.list-truyen .row');
-    Console.log('[INFO] genre.js - Tìm thấy ' + cacItem.size() + ' truyện');
+    Console.log('[INFO] genre.js - Tim thay ' + cacItem.size() + ' truyen');
 
     for (var i = 0; i < cacItem.size(); i++) {
         var item = cacItem.get(i);
         try {
-            // Tiêu đề & link
+            // Tieu de & link
             var tenEl = item.select('h3.truyen-title a').first();
             if (tenEl == null) continue;
             var ten = tenEl.text().trim();
             var link = tenEl.attr('href');
             if (!link) continue;
 
-            // Chuẩn hóa URL
-            if (link.indexOf('//') === 0) link = 'https:' + link;
-            if (link.indexOf('http') !== 0) link = 'https://truyenfull.vision' + link;
+            // Chuan hoa link thanh PATH-ONLY (bo host)
+            if (link.indexOf('https://truyenfull.vision') === 0) {
+                link = link.substring('https://truyenfull.vision'.length);
+            } else if (link.indexOf('//truyenfull.vision') === 0) {
+                link = link.substring('//truyenfull.vision'.length);
+            }
+            // Neu link ko bat dau bang / thi them /
+            if (link.charAt(0) !== '/') link = '/' + link;
 
-            // Ảnh bìa - dùng data-image (lazy load) hoặc src
+            // Anh bia - div.lazyimg voi data-image
             var cover = '';
             var imgEl = item.select('.lazyimg').first();
             if (imgEl != null) {
@@ -63,45 +66,38 @@ function execute(url, page) {
             }
             if (cover && cover.indexOf('//') === 0) cover = 'https:' + cover;
 
-            // Mô tả ngắn (nếu có)
-            var moTa = '';
-            var moTaEl = item.select('.story-item-description, .excerpt, p').first();
-            if (moTaEl != null) moTa = moTaEl.text().trim();
-
-            // Tác giả
+            // Tac gia
             var tacGia = '';
             var tacGiaEl = item.select('span.author').first();
             if (tacGiaEl != null) tacGia = tacGiaEl.text().trim();
-            if (tacGia) moTa = 'Tác giả: ' + tacGia + (moTa ? '\n' + moTa : '');
 
             danhSach.push({
                 name: ten,
                 link: link,
                 cover: cover,
-                description: moTa,
-                host: 'https://truyenfull.vision'
+                description: tacGia ? 'Tác giả: ' + tacGia : '',
+                host: HOST
             });
         } catch (e) {
-            Console.log('[WARN] genre.js - Lỗi parse item: ' + e);
+            Console.log('[WARN] genre.js - Loi parse item: ' + e);
         }
     }
 
     if (danhSach.length === 0) {
-        Console.log('[WARN] genre.js - Không tìm thấy truyện nào, kiểm tra lại selector');
+        Console.log('[WARN] genre.js - Khong tim thay truyen nao');
         return Response.error('Không tìm thấy truyện nào trong trang này');
     }
 
-    // Kiểm tra có trang tiếp không
+    // Kiem tra trang tiep
     var trangTiep = null;
-    var nextEl = doc.select('.pagination a[title*="Trang tiếp"], .pagination a:contains("Trang tiếp"), .pagination li:last-child a').first();
+    var nextEl = doc.select('.pagination a[title*=\"Trang tiếp\"], .pagination a:contains(\"Trang tiếp\")').first();
     if (nextEl != null) {
         var nextHref = nextEl.attr('href');
-        // Nếu nút next tồn tại và không phải trang hiện tại
         if (nextHref && nextHref.indexOf('javascript') < 0) {
             trangTiep = String(trangHienTai + 1);
         }
     }
 
-    Console.log('[INFO] genre.js - Trả về ' + danhSach.length + ' truyện, trang tiếp: ' + trangTiep);
+    Console.log('[INFO] genre.js - Tra ve ' + danhSach.length + ' truyen, trang tiep: ' + trangTiep);
     return Response.success(danhSach, trangTiep);
 }
